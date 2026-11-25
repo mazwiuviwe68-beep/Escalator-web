@@ -1,0 +1,9 @@
+{
+  "name": "ESCALATOR \u2014 The Hidden Trillionaire",
+  "short_name": "ESCALATOR",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "description": "Explore the fictional mega-city of New Veyron."
+}

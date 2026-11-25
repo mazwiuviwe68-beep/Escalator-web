@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#111827">
+<title>ESCALATOR — New Veyron</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<style>
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111827;color:#fff;font-family:Arial,sans-serif}
+#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%;touch-action:none}
+#top{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.tag{background:#111827d9;border:1px solid #ffffff35;border-radius:9px;padding:8px 10px;font-size:12px}
+#help{position:fixed;left:10px;right:10px;bottom:112px;text-align:center;font-size:12px;text-shadow:0 1px 4px #000}
+#pad{position:fixed;left:12px;bottom:14px;display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px;gap:5px}
+button{border:1px solid #ffffff55;background:#142333df;color:white;border-radius:10px;font-weight:bold;font-size:17px;touch-action:none}
+#pad button{font-size:22px}#actions{position:fixed;right:12px;bottom:14px;display:flex;flex-direction:column;gap:7px}
+#actions button{padding:12px 14px;font-size:12px}
+#notice{position:fixed;top:55px;left:10px;right:10px;text-align:center;font-size:12px;color:#ffe6a8}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="top"><div class="tag"><b>ESCALATOR</b> · NEW VEYRON</div><div class="tag" id="place">CITY EXPLORATION</div></div>
+<div id="notice">Browser development preview · Fictional city</div>
+<div id="help">Move with the arrows or WASD. Drag to look around. Approach a named building and press ENTER.</div>
+<div id="pad">
+ <span></span><button data-k="forward">▲</button><span></span>
+ <button data-k="left">◀</button><button data-k="back">▼</button><button data-k="right">▶</button>
+</div>
+<div id="actions"><button id="run">HOLD TO RUN</button><button id="enter">ENTER / EXIT</button><button id="reset">RESET</button></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const host=document.querySelector('#game'),place=document.querySelector('#place'),help=document.querySelector('#help');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bbdd0);scene.fog=new THREE.Fog(0x9bbdd0,75,155);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,220);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.setSize(innerWidth,innerHeight);host.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xeaf4ff,0x59634c,2));
+const sun=new THREE.DirectionalLight(0xffedcf,2);sun.position.set(-30,55,25);sun.castShadow=true;scene.add(sun);
+const city=new THREE.Group();scene.add(city);const inside=new THREE.Group();scene.add(inside);inside.visible=false;
+const material=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.82});
+function box(g,x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
+const grass=material(0x52764a),road=material(0x30363b),side=material(0xa2a29d),glass=material(0x75a5b6),white=material(0xe5e2d9);
+box(city,0,-.35,0,160,.5,160,grass);
+box(city,0,-.03,0,150,.15,15,road);box(city,0,-.03,0,15,.15,150,road);
+for(let n=-60;n<=60;n+=30){if(n){box(city,n,0,0,9,.16,150,road);box(city,0,0,n,150,.16,9,road)}}
+box(city,0,.08,9,150,.18,2,side);box(city,0,.08,-9,150,.18,2,side);box(city,9,.08,0,2,.18,150,side);box(city,-9,.08,0,2,.18,150,side);
+const buildings=[];
+function addBuilding(name,x,z,w,d,h,color){
+ const g=new THREE.Group();g.position.set(x,0,z);city.add(g);
+ box(g,0,h/2,0,w,h,d,material(color));box(g,0,h+.2,0,w+.5,.4,d+.5,material(0x303943));
+ for(let y=2;y<h-1;y+=2.5)for(let xx=-w/2+1.2;xx<w/2-1;xx+=2.5)box(g,xx,y,d/2+.04,1.1,1.1,.08,glass);
+ box(g,0,1,d/2+.08,2,2,.12,material(0x263b49));
+ buildings.push({name,x,z,w,d,g});
+}
+addBuilding('NEW VEYRON HOSPITAL',-34,-34,21,18,14,0xe1e5e4);
+addBuilding('CENTRAL SHOPPING STORE',34,-34,22,19,11,0xd5c4a5);
+addBuilding('ROSELAND MANSION',-34,34,22,21,9,0xe6dac6);
+addBuilding('MAZWI HOLDINGS',34,34,18,18,32,0x506a7e);
+addBuilding('APARTMENT RESIDENCE',0,-53,18,16,21,0xb8b5ac);
+for(let x=-65;x<=65;x+=30)for(let z=-65;z<=65;z+=30)if(Math.abs(x)>18&&Math.abs(z)>18)addBuilding('CITY BUILDING',x,z,13,13,9,0xb7c1c5);
+function person(x,z){const g=new THREE.Group();city.add(g);g.position.set(x,0,z);box(g,0,1,0,.4,.7,.25,material([0x3b79a0,0x9a674a,0x65865a,0x8c6498][Math.floor(Math.random()*4)]));const h=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),material(0x9b6c50));h.position.y=1.5;g.add(h);return {g,dx:Math.random()>.5?1:-1,dz:Math.random()>.5?1:-1}}
+const people=[];for(let i=0;i<12;i++)people.push(person(-40+Math.random()*80,Math.random()>.5?10:-10));
+function car(x,z,color,type){const g=new THREE.Group();city.add(g);box(g,0,.65,0,type==='bus'?4.8:3.2,.8,1.7,material(color));box(g,0,1.15,0,type==='bus'?3.4:2,.35,1.45,glass);return {g,speed:2+Math.random()*2,axis:Math.random()>.5?'x':'z',sign:Math.random()>.5?1:-1}}
+const cars=[];for(let i=0;i<9;i++)cars.push(car(-60+i*14,-4,[0x287bb6,0xd8d8d8,0xb94b42,0x262e37,0xd6b64e][i%5],i%5===0?'bus':'car'));
+const player=new THREE.Group();city.add(player);box(player,0,1,0,.55,1,.35,material(0x276a9c));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10),material(0x986b50));head.position.y=1.7;player.add(head);player.position.set(0,0,18);
+let yaw=0,pitch=.2,insideMode=false,current=null,room=0,run=false,drag=false,lx=0,ly=0;
+const held={};const keys={};
+function nearest(){let b=null,d=1e9;for(const q of buildings){const n=Math.hypot(player.position.x-q.x,player.position.z-q.z);if(n<Math.max(q.w,q.d)/2+5&&n<d){b=q;d=n}}return b}
+function makeInterior(q,r){while(inside.children.length){const c=inside.children[0];inside.remove(c)}const floor=material(0xb29b7e),wall=material(0xe7e2d8);box(inside,0,-.15,0,16,.3,13,floor);box(inside,0,2,-6.5,16,4,.2,wall);box(inside,-8,2,0,.2,4,13,wall);box(inside,8,2,0,.2,4,13,wall);box(inside,-4,2,6.5,8,4,.2,wall);box(inside,5,2,6.5,6,4,.2,wall);
+ const furn=material(q.name.includes('HOSPITAL')?0x9fc5ce:q.name.includes('STORE')?0xb58b50:q.name.includes('MANSION')?0x76513b:0x46677b);
+ box(inside,-3,.5,-2,3,1,1.5,furn);box(inside,2,.5,-2,2,1,1.2,material(0x6b777e));box(inside,0,1.7,-6.3,5,.4,.1,material(0x304c5c));
+ const label=document.createElement('canvas');label.width=512;label.height=96;const c=label.getContext('2d');c.fillStyle='white';c.font='bold 30px Arial';c.textAlign='center';c.fillText(q.name+' · ROOM '+(r+1),256,60);const tex=new THREE.CanvasTexture(label);const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.8,.8),new THREE.MeshBasicMaterial({map:tex}));sign.position.set(0,1.7,-6.2);inside.add(sign);
+}
+function interact(){if(insideMode){insideMode=false;inside.visible=false;city.visible=true;player.position.set(current.x,0,current.z+current.d+4);place.textContent='CITY EXPLORATION';help.textContent='Explore New Veyron. Approach a named building and press ENTER.';return}const b=nearest();if(!b){help.textContent='Walk closer to a named building first.';return}current=b;insideMode=true;city.visible=false;inside.visible=true;room=0;makeInterior(b,room);player.position.set(0,0,4);place.textContent=b.name;help.textContent='Interior preview. Press ENTER to exit, or F for another room.'}
+function nextRoom(){if(!insideMode)return;room=(room+1)%3;makeInterior(current,room);help.textContent='Interior preview · Room '+(room+1)+' of 3. Press ENTER to exit.'}
+function move(dt){let f=(keys.w||keys.arrowup||held.forward?1:0)-(keys.s||keys.arrowdown||held.back?1:0),s=(keys.d||keys.arrowright||held.right?1:0)-(keys.a||keys.arrowleft||held.left?1:0);let l=Math.hypot(f,s);if(l){f/=l;s/=l;const speed=run||keys.shift?8:4;player.position.x+=(-Math.sin(yaw)*f+Math.cos(yaw)*s)*speed*dt;player.position.z+=(-Math.cos(yaw)*f-Math.sin(yaw)*s)*speed*dt}if(insideMode){player.position.x=THREE.MathUtils.clamp(player.position.x,-7,7);player.position.z=THREE.MathUtils.clamp(player.position.z,-5.5,5.5)}else{player.position.x=THREE.MathUtils.clamp(player.position.x,-72,72);player.position.z=THREE.MathUtils.clamp(player.position.z,-72,72)}}
+function cameraUpdate(){const target=new THREE.Vector3(player.position.x,player.position.y+1.2,player.position.z);camera.position.copy(target).add(new THREE.Vector3(Math.sin(yaw)*8,3.2+pitch*4,Math.cos(yaw)*8));camera.lookAt(target)}
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='f')nextRoom()});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();held[k]=true});['pointerup','pointercancel','pointerleave'].forEach(v=>b.addEventListener(v,()=>held[k]=false))});
+const runBtn=document.querySelector('#run');runBtn.addEventListener('pointerdown',()=>run=true);['pointerup','pointerleave','pointercancel'].forEach(v=>runBtn.addEventListener(v,()=>run=false));
+document.querySelector('#enter').onclick=interact;document.querySelector('#reset').onclick=()=>{insideMode=false;inside.visible=false;city.visible=true;player.position.set(0,0,18);place.textContent='CITY EXPLORATION'};
+renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
+renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-lx)*.006;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-ly)*.003,-.2,.8);lx=e.clientX;ly=e.clientY});
+renderer.domElement.addEventListener('pointerup',()=>drag=false);renderer.domElement.addEventListener('pointercancel',()=>drag=false);
+let last=performance.now(),t=0;function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;t+=dt;move(dt);if(!insideMode){for(const p of people){p.g.position.x+=p.dx*dt*.7;p.g.position.z+=p.dz*dt*.35;if(Math.abs(p.g.position.x)>55)p.dx*=-1;if(Math.abs(p.g.position.z)>12)p.dz*=-1}for(const v of cars){if(v.axis==='x'){v.g.position.x+=v.speed*v.sign*dt;v.g.position.z=v.g.position.z||-4;if(Math.abs(v.g.position.x)>70)v.sign*=-1}else{v.g.position.z+=v.speed*v.sign*dt;v.g.position.x=4;if(Math.abs(v.g.position.z)>70)v.sign*=-1}}const b=nearest();if(b)help.textContent='Nearby: '+b.name+' · Press ENTER to explore';}cameraUpdate();renderer.render(scene,camera)}requestAnimationFrame(loop);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
