@@ -3,89 +3,104 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#111827">
+<meta name="theme-color" content="#172638">
 <title>ESCALATOR — New Veyron</title>
-<link rel="manifest" href="./manifest.webmanifest">
 <style>
-*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#111827;color:#fff;font-family:Arial,sans-serif}
-#game{position:fixed;inset:0}canvas{display:block;width:100%;height:100%;touch-action:none}
-#top{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
-.tag{background:#111827d9;border:1px solid #ffffff35;border-radius:9px;padding:8px 10px;font-size:12px}
-#help{position:fixed;left:10px;right:10px;bottom:112px;text-align:center;font-size:12px;text-shadow:0 1px 4px #000}
-#pad{position:fixed;left:12px;bottom:14px;display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:48px 48px;gap:5px}
-button{border:1px solid #ffffff55;background:#142333df;color:white;border-radius:10px;font-weight:bold;font-size:17px;touch-action:none}
-#pad button{font-size:22px}#actions{position:fixed;right:12px;bottom:14px;display:flex;flex-direction:column;gap:7px}
-#actions button{padding:12px 14px;font-size:12px}
-#notice{position:fixed;top:55px;left:10px;right:10px;text-align:center;font-size:12px;color:#ffe6a8}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9fc3d5;font-family:Arial,sans-serif;touch-action:none}
+canvas{display:block}
+#top{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.pill{background:#172638eF;color:white;border:1px solid #61798c;border-radius:15px;padding:12px 15px;font-size:13px;letter-spacing:.3px}
+#hint{position:absolute;bottom:165px;left:12px;right:12px;text-align:center;color:white;text-shadow:0 1px 4px #111;font-size:13px;pointer-events:none}
+#controls{position:absolute;bottom:20px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:flex-end}
+#pad{display:grid;grid-template-columns:repeat(3,68px);grid-template-rows:repeat(2,68px);gap:7px}
+button{background:#172638eF;color:white;border:1px solid #6c8496;border-radius:15px;font-size:16px;font-weight:bold;min-width:68px;min-height:62px;touch-action:none}
+#up{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#down{grid-column:2;grid-row:2}#right{grid-column:3;grid-row:2}
+#actions{display:flex;flex-direction:column;gap:9px}#actions button{width:132px;font-size:13px}
+@media(min-width:800px){#controls{left:28px;right:28px}#pad{grid-template-columns:repeat(3,78px);grid-template-rows:repeat(2,78px)}button{min-width:78px;min-height:70px}}
 </style>
 </head>
 <body>
-<div id="game"></div>
-<div id="top"><div class="tag"><b>ESCALATOR</b> · NEW VEYRON</div><div class="tag" id="place">CITY EXPLORATION</div></div>
-<div id="notice">Browser development preview · Fictional city</div>
-<div id="help">Move with the arrows or WASD. Drag to look around. Approach a named building and press ENTER.</div>
-<div id="pad">
- <span></span><button data-k="forward">▲</button><span></span>
- <button data-k="left">◀</button><button data-k="back">▼</button><button data-k="right">▶</button>
+<div id="top"><div class="pill"><b>ESCALATOR</b> · NEW VEYRON</div><div class="pill">CHARACTER UPGRADE</div></div>
+<div id="hint">Move with the arrows or WASD · Drag to look around · Approach a named building and press ENTER</div>
+<div id="controls">
+  <div id="pad">
+    <button id="up">▲</button><button id="left">◀</button><button id="down">▼</button><button id="right">▶</button>
+  </div>
+  <div id="actions"><button id="run">HOLD TO RUN</button><button id="enter">ENTER / EXIT</button><button id="reset">RESET</button></div>
 </div>
-<div id="actions"><button id="run">HOLD TO RUN</button><button id="enter">ENTER / EXIT</button><button id="reset">RESET</button></div>
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-const host=document.querySelector('#game'),place=document.querySelector('#place'),help=document.querySelector('#help');
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bbdd0);scene.fog=new THREE.Fog(0x9bbdd0,75,155);
-const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,220);
-const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.setSize(innerWidth,innerHeight);host.appendChild(renderer.domElement);
-scene.add(new THREE.HemisphereLight(0xeaf4ff,0x59634c,2));
-const sun=new THREE.DirectionalLight(0xffedcf,2);sun.position.set(-30,55,25);sun.castShadow=true;scene.add(sun);
-const city=new THREE.Group();scene.add(city);const inside=new THREE.Group();scene.add(inside);inside.visible=false;
-const material=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.82});
-function box(g,x,y,z,w,h,d,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
-const grass=material(0x52764a),road=material(0x30363b),side=material(0xa2a29d),glass=material(0x75a5b6),white=material(0xe5e2d9);
-box(city,0,-.35,0,160,.5,160,grass);
-box(city,0,-.03,0,150,.15,15,road);box(city,0,-.03,0,15,.15,150,road);
-for(let n=-60;n<=60;n+=30){if(n){box(city,n,0,0,9,.16,150,road);box(city,0,0,n,150,.16,9,road)}}
-box(city,0,.08,9,150,.18,2,side);box(city,0,.08,-9,150,.18,2,side);box(city,9,.08,0,2,.18,150,side);box(city,-9,.08,0,2,.18,150,side);
-const buildings=[];
-function addBuilding(name,x,z,w,d,h,color){
- const g=new THREE.Group();g.position.set(x,0,z);city.add(g);
- box(g,0,h/2,0,w,h,d,material(color));box(g,0,h+.2,0,w+.5,.4,d+.5,material(0x303943));
- for(let y=2;y<h-1;y+=2.5)for(let xx=-w/2+1.2;xx<w/2-1;xx+=2.5)box(g,xx,y,d/2+.04,1.1,1.1,.08,glass);
- box(g,0,1,d/2+.08,2,2,.12,material(0x263b49));
- buildings.push({name,x,z,w,d,g});
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x9fc3d5); scene.fog=new THREE.Fog(0x9fc3d5,65,180);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,300);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xe8f5ff,0x66704c,2));
+const sun=new THREE.DirectionalLight(0xffedcf,2.1); sun.position.set(-35,55,25); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+const mat=(c,r=.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const ground= new THREE.Mesh(new THREE.PlaneGeometry(220,220),mat(0x55784d)); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+function cube(x,y,z,sx,sy,sz,color){let m=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+function road(x,z,w,d){let m=new THREE.Mesh(new THREE.BoxGeometry(w,.12,d),mat(0x34393d));m.position.set(x,.06,z);scene.add(m)}
+road(0,0,180,18);road(0,0,18,180);
+for(let i=-80;i<=80;i+=10){cube(i,.14,-10,.18,.02,.18,0xe8dfb7);cube(i,.14,10,.18,.02,.18,0xe8dfb7)}
+function building(x,z,w,d,h,color,name){
+ cube(x,h/2,z,w,h,d,color);
+ for(let y=2.2;y<h-1;y+=2.7) for(let xx=x-w/2+1.5;xx<x+w/2-1;xx+=3){
+  let win=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.45,.08),mat(0x79a8b4,.35));win.position.set(xx,y,z-d/2-.05);scene.add(win);
+ }
+ cube(x,1.1,z-d/2-.12,1.8,2.2,.15,0x273746);
+ const label=document.createElement('div'); label.textContent=name; label.style.cssText='position:absolute;color:white;background:#172638d9;padding:4px 7px;border-radius:6px;font:12px Arial;display:none'; document.body.appendChild(label);
+ return {x,z,w,d,h,label,name};
 }
-addBuilding('NEW VEYRON HOSPITAL',-34,-34,21,18,14,0xe1e5e4);
-addBuilding('CENTRAL SHOPPING STORE',34,-34,22,19,11,0xd5c4a5);
-addBuilding('ROSELAND MANSION',-34,34,22,21,9,0xe6dac6);
-addBuilding('MAZWI HOLDINGS',34,34,18,18,32,0x506a7e);
-addBuilding('APARTMENT RESIDENCE',0,-53,18,16,21,0xb8b5ac);
-for(let x=-65;x<=65;x+=30)for(let z=-65;z<=65;z+=30)if(Math.abs(x)>18&&Math.abs(z)>18)addBuilding('CITY BUILDING',x,z,13,13,9,0xb7c1c5);
-function person(x,z){const g=new THREE.Group();city.add(g);g.position.set(x,0,z);box(g,0,1,0,.4,.7,.25,material([0x3b79a0,0x9a674a,0x65865a,0x8c6498][Math.floor(Math.random()*4)]));const h=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),material(0x9b6c50));h.position.y=1.5;g.add(h);return {g,dx:Math.random()>.5?1:-1,dz:Math.random()>.5?1:-1}}
-const people=[];for(let i=0;i<12;i++)people.push(person(-40+Math.random()*80,Math.random()>.5?10:-10));
-function car(x,z,color,type){const g=new THREE.Group();city.add(g);box(g,0,.65,0,type==='bus'?4.8:3.2,.8,1.7,material(color));box(g,0,1.15,0,type==='bus'?3.4:2,.35,1.45,glass);return {g,speed:2+Math.random()*2,axis:Math.random()>.5?'x':'z',sign:Math.random()>.5?1:-1}}
-const cars=[];for(let i=0;i<9;i++)cars.push(car(-60+i*14,-4,[0x287bb6,0xd8d8d8,0xb94b42,0x262e37,0xd6b64e][i%5],i%5===0?'bus':'car'));
-const player=new THREE.Group();city.add(player);box(player,0,1,0,.55,1,.35,material(0x276a9c));const head=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10),material(0x986b50));head.position.y=1.7;player.add(head);player.position.set(0,0,18);
-let yaw=0,pitch=.2,insideMode=false,current=null,room=0,run=false,drag=false,lx=0,ly=0;
-const held={};const keys={};
-function nearest(){let b=null,d=1e9;for(const q of buildings){const n=Math.hypot(player.position.x-q.x,player.position.z-q.z);if(n<Math.max(q.w,q.d)/2+5&&n<d){b=q;d=n}}return b}
-function makeInterior(q,r){while(inside.children.length){const c=inside.children[0];inside.remove(c)}const floor=material(0xb29b7e),wall=material(0xe7e2d8);box(inside,0,-.15,0,16,.3,13,floor);box(inside,0,2,-6.5,16,4,.2,wall);box(inside,-8,2,0,.2,4,13,wall);box(inside,8,2,0,.2,4,13,wall);box(inside,-4,2,6.5,8,4,.2,wall);box(inside,5,2,6.5,6,4,.2,wall);
- const furn=material(q.name.includes('HOSPITAL')?0x9fc5ce:q.name.includes('STORE')?0xb58b50:q.name.includes('MANSION')?0x76513b:0x46677b);
- box(inside,-3,.5,-2,3,1,1.5,furn);box(inside,2,.5,-2,2,1,1.2,material(0x6b777e));box(inside,0,1.7,-6.3,5,.4,.1,material(0x304c5c));
- const label=document.createElement('canvas');label.width=512;label.height=96;const c=label.getContext('2d');c.fillStyle='white';c.font='bold 30px Arial';c.textAlign='center';c.fillText(q.name+' · ROOM '+(r+1),256,60);const tex=new THREE.CanvasTexture(label);const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.8,.8),new THREE.MeshBasicMaterial({map:tex}));sign.position.set(0,1.7,-6.2);inside.add(sign);
+const buildings=[
+ building(-25,-27,24,16,15,0xc7b18a,'NEW VEYRON HOSPITAL'),
+ building(22,-27,22,16,13,0xb8c2c4,'CENTRAL SHOPPING STORE'),
+ building(-28,28,24,18,12,0xd2bca0,'ROSELAND MANSION'),
+ building(25,28,22,18,25,0x788c9a,'MAZWI HOLDINGS'),
+ building(0,-55,22,15,12,0xb4b8aa,'APARTMENT RESIDENCE')
+];
+// sidewalk strips
+for(let z of [-11,11]){let s=cube(0,.16,z,180,.2,2,0xbab9ad)}
+for(let x of [-11,11]){let s=cube(x,.16,0,2,.2,180,0xbab9ad)}
+// Human-like low-poly character with torso, neck, head, hair, arms and legs
+function makePerson(opts={}){
+ const g=new THREE.Group(), skin=mat(opts.skin||0x9a6246), shirt=mat(opts.shirt||0x286b9b), pants=mat(opts.pants||0x263747), shoes=mat(0x20252a), hair=mat(opts.hair||0x211b19);
+ const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.34,.62,4,8),shirt);torso.position.y=1.22;torso.castShadow=true;g.add(torso);
+ const neck=new THREE.Mesh(new THREE.CylinderGeometry(.105,.12,.18,8),skin);neck.position.y=1.72;g.add(neck);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.24,12,10),skin);head.position.y=2.02;head.castShadow=true;g.add(head);
+ const cap=new THREE.Mesh(new THREE.SphereGeometry(.245,12,6,0,Math.PI*2,0,Math.PI/2),hair);cap.position.y=2.09;cap.scale.set(1, .55,1);g.add(cap);
+ const armPivots=[],legPivots=[];
+ for(let side of [-1,1]){
+  let arm=new THREE.Group();arm.position.set(side*.4,1.48,0);g.add(arm);let upper=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.43,3,7),shirt);upper.position.y=-.27;arm.add(upper);let hand=new THREE.Mesh(new THREE.SphereGeometry(.095,8,7),skin);hand.position.y=-.56;arm.add(hand);armPivots.push(arm);
+  let leg=new THREE.Group();leg.position.set(side*.18,.82,0);g.add(leg);let thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.14,.48,3,7),pants);thigh.position.y=-.28;leg.add(thigh);let shoe=new THREE.Mesh(new THREE.BoxGeometry(.22,.12,.38),shoes);shoe.position.set(0,-.58,.08);leg.add(shoe);legPivots.push(leg);
+ }
+ g.userData={armPivots,legPivots,phase:Math.random()*6.28};return g;
 }
-function interact(){if(insideMode){insideMode=false;inside.visible=false;city.visible=true;player.position.set(current.x,0,current.z+current.d+4);place.textContent='CITY EXPLORATION';help.textContent='Explore New Veyron. Approach a named building and press ENTER.';return}const b=nearest();if(!b){help.textContent='Walk closer to a named building first.';return}current=b;insideMode=true;city.visible=false;inside.visible=true;room=0;makeInterior(b,room);player.position.set(0,0,4);place.textContent=b.name;help.textContent='Interior preview. Press ENTER to exit, or F for another room.'}
-function nextRoom(){if(!insideMode)return;room=(room+1)%3;makeInterior(current,room);help.textContent='Interior preview · Room '+(room+1)+' of 3. Press ENTER to exit.'}
-function move(dt){let f=(keys.w||keys.arrowup||held.forward?1:0)-(keys.s||keys.arrowdown||held.back?1:0),s=(keys.d||keys.arrowright||held.right?1:0)-(keys.a||keys.arrowleft||held.left?1:0);let l=Math.hypot(f,s);if(l){f/=l;s/=l;const speed=run||keys.shift?8:4;player.position.x+=(-Math.sin(yaw)*f+Math.cos(yaw)*s)*speed*dt;player.position.z+=(-Math.cos(yaw)*f-Math.sin(yaw)*s)*speed*dt}if(insideMode){player.position.x=THREE.MathUtils.clamp(player.position.x,-7,7);player.position.z=THREE.MathUtils.clamp(player.position.z,-5.5,5.5)}else{player.position.x=THREE.MathUtils.clamp(player.position.x,-72,72);player.position.z=THREE.MathUtils.clamp(player.position.z,-72,72)}}
-function cameraUpdate(){const target=new THREE.Vector3(player.position.x,player.position.y+1.2,player.position.z);camera.position.copy(target).add(new THREE.Vector3(Math.sin(yaw)*8,3.2+pitch*4,Math.cos(yaw)*8));camera.lookAt(target)}
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='e')interact();if(e.key.toLowerCase()==='f')nextRoom()});
-addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
-document.querySelectorAll('[data-k]').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();held[k]=true});['pointerup','pointercancel','pointerleave'].forEach(v=>b.addEventListener(v,()=>held[k]=false))});
-const runBtn=document.querySelector('#run');runBtn.addEventListener('pointerdown',()=>run=true);['pointerup','pointerleave','pointercancel'].forEach(v=>runBtn.addEventListener(v,()=>run=false));
-document.querySelector('#enter').onclick=interact;document.querySelector('#reset').onclick=()=>{insideMode=false;inside.visible=false;city.visible=true;player.position.set(0,0,18);place.textContent='CITY EXPLORATION'};
-renderer.domElement.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)});
-renderer.domElement.addEventListener('pointermove',e=>{if(!drag)return;yaw-=(e.clientX-lx)*.006;pitch=THREE.MathUtils.clamp(pitch+(e.clientY-ly)*.003,-.2,.8);lx=e.clientX;ly=e.clientY});
-renderer.domElement.addEventListener('pointerup',()=>drag=false);renderer.domElement.addEventListener('pointercancel',()=>drag=false);
-let last=performance.now(),t=0;function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.04);last=now;t+=dt;move(dt);if(!insideMode){for(const p of people){p.g.position.x+=p.dx*dt*.7;p.g.position.z+=p.dz*dt*.35;if(Math.abs(p.g.position.x)>55)p.dx*=-1;if(Math.abs(p.g.position.z)>12)p.dz*=-1}for(const v of cars){if(v.axis==='x'){v.g.position.x+=v.speed*v.sign*dt;v.g.position.z=v.g.position.z||-4;if(Math.abs(v.g.position.x)>70)v.sign*=-1}else{v.g.position.z+=v.speed*v.sign*dt;v.g.position.x=4;if(Math.abs(v.g.position.z)>70)v.sign*=-1}}const b=nearest();if(b)help.textContent='Nearby: '+b.name+' · Press ENTER to explore';}cameraUpdate();renderer.render(scene,camera)}requestAnimationFrame(loop);
+const player=makePerson({skin:0x9b674c,shirt:0x2475a5,pants:0x24384b});player.position.set(0,0,3);scene.add(player);
+const npcs=[];const outfits=[[0x70452f,0x9b543e,0x25394a],[0xd0a47a,0x547d69,0x34343c],[0x754a35,0x9b9da7,0x303f52],[0x9b6b4c,0xb28a48,0x263a48],[0x613f30,0x8b617b,0x283746]];
+for(let i=0;i<14;i++){let o=outfits[i%outfits.length];let p=makePerson({skin:o[0],shirt:o[1],pants:o[2]});p.position.set((Math.random()-.5)*76,0,(Math.random()-.5)*76);p.userData.path=[new THREE.Vector3(p.position.x,0,p.position.z),new THREE.Vector3(p.position.x+(Math.random()-.5)*12,0,p.position.z+(Math.random()-.5)*12)];p.userData.target=1;scene.add(p);npcs.push(p)}
+// parked and moving traffic
+const cars=[];for(let i=0;i<8;i++){let car=new THREE.Group();let body=new THREE.Mesh(new THREE.BoxGeometry(2.1,.7,4),mat([0x245b88,0x9a3d32,0xc4c7c8,0x26323a][i%4]));body.position.y=.65;car.add(body);let cabin=new THREE.Mesh(new THREE.BoxGeometry(1.6,.65,1.9),mat(0x8ba8b5));cabin.position.set(0,1.25,-.25);car.add(cabin);car.position.set(-75+i*20,.0,-7);scene.add(car);cars.push(car)}
+let keys={},move={x:0,z:0},running=false,yaw=0,pitch=.18,drag=false,lastX=0,lastY=0;
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Enter')enterBuilding()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+function bind(id,key){let b=document.getElementById(id);b.addEventListener('pointerdown',e=>{e.preventDefault();keys[key]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[key]=false))}
+bind('up','w');bind('down','s');bind('left','a');bind('right','d');
+const runBtn=document.getElementById('run');runBtn.addEventListener('pointerdown',e=>{e.preventDefault();running=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>runBtn.addEventListener(ev,()=>running=false));
+document.getElementById('reset').onclick=()=>{player.position.set(0,0,3);yaw=0;pitch=.18};
+let inside=false;function enterBuilding(){let b=buildings.find(b=>Math.abs(player.position.x-b.x)<b.w/2+3&&Math.abs(player.position.z-b.z)<b.d/2+3);if(!b)return;inside=!inside;if(inside){alert('Entering '+b.name+' — interior rooms are planned for a future upgrade.');inside=false}}
+document.getElementById('enter').onclick=enterBuilding;
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.clientY<innerHeight-180){drag=true;lastX=e.clientX;lastY=e.clientY}});
+addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(drag){yaw-=(e.clientX-lastX)*.005;pitch=Math.max(-.15,Math.min(.65,pitch+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY}});
+function animate(t){requestAnimationFrame(animate);let dt=Math.min(.04,clock.getDelta()),speed=running?8:4.5;
+ let f=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0),s=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);
+ let dir=new THREE.Vector3(s,0,-f);if(dir.length()>0){dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);player.position.addScaledVector(dir,speed*dt);player.rotation.y=Math.atan2(dir.x,dir.z)}
+ animateLimbs(player,t/250,Math.min(1,Math.hypot(f,s)));
+ npcs.forEach((p,i)=>{let path=p.userData.path,target=path[p.userData.target];let v=target.clone().sub(p.position);if(v.length()<.5)p.userData.target=1-p.userData.target;else{v.normalize();p.position.addScaledVector(v,dt*.65);p.rotation.y=Math.atan2(v.x,v.z)}animateLimbs(p,t/350,.55)});
+ cars.forEach(c=>{c.position.x+=dt*3.5;if(c.position.x>80)c.position.x=-80});
+ let target=new THREE.Vector3(player.position.x,1.5,player.position.z);let offset=new THREE.Vector3(Math.sin(yaw)*10,4+pitch*7,Math.cos(yaw)*10);camera.position.copy(target).add(offset);camera.lookAt(target);
+ renderer.render(scene,camera)}
+function animateLimbs(p,time,amount){let u=p.userData;u.armPivots.forEach((a,i)=>a.rotation.x=Math.sin(time+u.phase+i*Math.PI)*.55*amount);u.legPivots.forEach((l,i)=>l.rotation.x=Math.sin(time+u.phase+i*Math.PI)*.65*amount)}
+const clock=new THREE.Clock();camera.position.set(0,5,13);animate(0);
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+})();
 </script>
-</body>
-</html>
+</body></html>

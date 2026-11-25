@@ -1,21 +1,11 @@
-# ESCALATOR — Browser Edition
+# ESCALATOR — Character Upgrade
 
-This is an early browser prototype for ESCALATOR: The Hidden Trillionaire — The Mazwi Empire.
+This replaces the earlier browser prototype's simple capsule characters with low-poly human-shaped models: head, hair, neck, torso, arms, hands, legs and shoes, with simple walking/running animation.
 
-## Files
-- `index.html`: the playable 3D browser prototype.
-- `manifest.webmanifest`: basic installable-web-app metadata.
-- `README.md`: project notes.
+## Publish on GitHub Pages
+1. Extract this ZIP.
+2. In your `escalator-web` repository, upload the new `index.html` to the repository root.
+3. Choose **Commit changes**. If GitHub asks whether to replace the existing `index.html`, confirm the replacement.
+4. Wait for GitHub Pages to redeploy, then refresh your published website.
 
-## Run / publish
-This is a static site. Publish the repository root with GitHub Pages:
-1. Open repository Settings.
-2. Open Pages.
-3. Under Build and deployment, choose Deploy from a branch.
-4. Choose `main` and `/(root)`, then Save.
-5. Wait for GitHub Pages to publish and use the URL shown in Settings > Pages.
-
-The 3D library is loaded from a public CDN, so the first load needs an internet connection.
-
-## Current prototype limitations
-This is not the complete commercial game. It has simple placeholder buildings, pedestrians, vehicles, and room previews. It does not yet contain the full story, save system, production-quality AI, multiplayer, or final game assets.
+This remains an early browser prototype, not the finished production game. It uses Three.js from a CDN and needs an internet connection. Character models are stylized low-poly placeholders, not photorealistic models. The building-interior action is a placeholder for a future upgrade.
